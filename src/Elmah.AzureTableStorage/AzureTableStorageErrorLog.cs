@@ -14,9 +14,12 @@ namespace Elmah.AzureTableStorage
     public class AzureTableStorageErrorLog : ErrorLog
     {
         private readonly CloudTable _cloudTable;
-        private const string TableName = "Elmah";
+
+        protected const string TableName = "Elmah";
 
         private const int MaxAppNameLength = 60;
+
+        protected CloudStorageAccount storageAccount { get; private set; }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="AzureTableStorageErrorLog"/> class
@@ -34,15 +37,15 @@ namespace Elmah.AzureTableStorage
             // If there is no connection string to use then throw an 
             // exception to abort construction.
             //
-
             if (connectionString.Length == 0)
                 throw new ApplicationException("Connection string is missing for the Azure Table Storage error log.");
 
-            var cloudStorageAccount = CloudStorageAccount.Parse(connectionString);
-            var tableClient = cloudStorageAccount.CreateCloudTableClient();
-            _cloudTable = tableClient.GetTableReference(TableName);
-            _cloudTable.CreateIfNotExists();
+            this.storageAccount = CloudStorageAccount.Parse(connectionString);
+            var tableClient = storageAccount.CreateCloudTableClient();
 
+            _cloudTable = tableClient.GetTableReference(this.GetElmahLogTableName());
+            _cloudTable.CreateIfNotExists();
+            
             //
             // Set the application name as this implementation provides
             // per-application isolation over a single store.
@@ -94,9 +97,7 @@ namespace Elmah.AzureTableStorage
                 Type = error.Type,
                 User = error.User,
             };
-
-            var tableOperation = TableOperation.Insert(elmahEntity);
-            _cloudTable.Execute(tableOperation);
+            AddEntity(elmahEntity);
 
             return elmahEntity.RowKey;
         }
@@ -153,6 +154,16 @@ namespace Elmah.AzureTableStorage
 
             var error = ErrorXml.DecodeString(elmahEntity.AllXml);
             return new ErrorLogEntry(this, id, error);
+        }
+
+        protected virtual void AddEntity(ElmahEntity elmahEntity)
+        {
+            _cloudTable.Execute(TableOperation.Insert(elmahEntity));
+        }
+
+        protected virtual string GetElmahLogTableName()
+        {
+            return TableName;
         }
     }
 }

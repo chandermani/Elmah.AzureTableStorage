@@ -79,6 +79,7 @@
   <ItemGroup>
     <Compile Include="AzureHelper.cs" />
     <Compile Include="AzureTableStorageErrorLog.cs" />
+    <Compile Include="AzureTableStorageRollingErrorLog.cs" />
     <Compile Include="ElmahEntity.cs" />
     <Compile Include="ElmahHelper.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
